@@ -59,7 +59,7 @@ void Camera::turn(int enm, float angle){
             this->tracker = action;
             break;
         case UP:
-            action = glm::angleAxis(glm::radians(-angle), this->direction);
+            action = glm::angleAxis(glm::radians(angle), this->direction);
             this->tracker = action;
             break;
         case DOWN:

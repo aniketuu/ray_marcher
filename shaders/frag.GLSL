@@ -1,10 +1,10 @@
 #version 330 core
 
-const int MAX_STEPS = 64;
+const int MAX_STEPS = 200;
 const float START = 0.001;
 const float MAX_DIST = 1000.0;
-const float EPSILON = 0.0001;
-const float sensor_dist = 2.0;
+const float EPSILON = 0.001;
+const float sensor_dist = 2.5;
 
 struct Camera{
     vec3 position;
@@ -24,6 +24,10 @@ uniform Camera camera;
 out vec4 frag_color;
 
 float sdfSphere(vec3 p, float r){
+    vec3 trans = vec3(1.0);
+    p = p -trans;
+    //p = abs(p);
+   //p = vec3(mod(p.x,2.0), p.y, p.z);
     return length(p) - r;
 }
 
@@ -36,8 +40,9 @@ float sdfBox( vec3 p, vec3 b )
 float sdfScene(vec3 p){
     // box
     vec3 b = vec3(1.0, 1.0, 1.0);
-    vec3 tr = vec3(3.5, -2.5, 0.0);
-    return min(sdfBox(p, b), sdfBox(p+tr,b));
+    vec3 tr = vec3(3.5, -1.5, 0.0);
+    //return sdfBox(p, b);
+    return sdfSphere(p, 0.4);
 }
 
 float rayMarch(Ray ray){
@@ -45,6 +50,7 @@ float rayMarch(Ray ray){
     float dist = START;
     for(int i = 0; i<MAX_STEPS; i++){
         p = ray.position + dist * ray.direction;
+        p = mod(abs(p),2.0);
         float temp = sdfScene(p);
         if(temp < EPSILON){
             // hit
@@ -67,8 +73,6 @@ vec3 estimateNormal(vec3 p) {
 }
 
 vec3 getDirection(vec2 uv){
-    vec3 plane = vec3(uv, camera.direction.z);
-    
     vec3 ray_dir = sensor_dist*camera.direction + uv.x*camera.right_axis + uv.y*camera.up_axis;
     return normalize(ray_dir);
 }
@@ -84,13 +88,12 @@ void main(){
     vec3 eye = camera.position;
     vec3 ray_dir = getDirection(uv);
     
-    
     Ray ray;
     ray.position = eye;
     ray.direction = ray_dir;
 
     // light pos & col
-    vec3 light_pos = vec3(1.5, 1.5, 1.5);
+    vec3 light_pos = vec3(3.5, 3.5, 3.5);
     vec3 light_col = vec3(1.0, 1.0, 1.0);
 
     // obj
@@ -102,6 +105,7 @@ void main(){
     } 
     else{
         vec3 frag_pos = ray.position + dist * ray.direction;
+        frag_pos = mod(frag_pos,2.0);
         vec3 light_dir = normalize(light_pos - frag_pos);
         vec3 view_dir = normalize(eye - frag_pos);
 
@@ -112,7 +116,7 @@ void main(){
         vec3 reflect_dir = reflect(-light_dir, normal);  
 
         // ambient 
-        float ambient_strength = 0.15;
+        float ambient_strength = 0.35;
         vec3 ambient = light_col * ambient_strength;
 
         // diffuse
@@ -125,6 +129,7 @@ void main(){
         vec3 specular = specular_strength * specular_radius * light_col;  
 
         vec3 color = (ambient + diffuse + specular) * object_color;
+        //vec3 color = vec3(dist/4.0);
         frag_color = vec4(color, 1.0);
     }
 

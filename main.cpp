@@ -37,11 +37,13 @@ int main(){
         display.clearScreen(0.4, 0.3, 0.7, 1.0);
 
         // uniforms
+        
         shader.setVec2f("display_res", (float)display_width, (float)display_height);
         shader.setVec3f("camera.position", camera.getPosition());
         shader.setVec3f("camera.direction", camera.getDirection());
         shader.setVec3f("camera.up_axis", camera.getUpAxis());
         shader.setVec3f("camera.right_axis", camera.getRightAxis());
+        
 
         // render
         fullscreen_quad.bindObjects();
