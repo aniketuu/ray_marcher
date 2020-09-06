@@ -128,6 +128,11 @@ void Shader::use(){
     glUseProgram(this->program_id);
 }
 
+// external  defines
+void Shader::add(std::string target, std::string source){
+    this->frag_source.replace(this->frag_source.find(target), target.length(), source);
+}
+
 // set uniforms
 void Shader::setInt(std::string name, int n){
     this->use();

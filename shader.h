@@ -31,6 +31,9 @@ public:
     void checkCompileErrors(GLuint id, std::string);
     void use();
 
+    // external deefines
+    void add(std::string target, std::string source);
+
     // set uniforms
     void setInt(std::string name, int n);
     void setFloat(std::string name, float f);

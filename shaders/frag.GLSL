@@ -1,10 +1,6 @@
 #version 330 core
 
-const int MAX_STEPS = 200;
-const float START = 0.001;
-const float MAX_DIST = 1000.0;
-const float EPSILON = 0.001;
-const float sensor_dist = 2.5;
+// CAMERA_PROPERTIES
 
 struct Camera{
     vec3 position;
@@ -25,6 +21,7 @@ out vec4 frag_color;
 
 float sdfSphere(vec3 p, float r){
     vec3 trans = vec3(1.0);
+    p = mod(p,2.0);
     p = p -trans;
     //p = abs(p);
    //p = vec3(mod(p.x,2.0), p.y, p.z);
@@ -50,7 +47,7 @@ float rayMarch(Ray ray){
     float dist = START;
     for(int i = 0; i<MAX_STEPS; i++){
         p = ray.position + dist * ray.direction;
-        p = mod(abs(p),2.0);
+        //p = mod(abs(p),2.0);
         float temp = sdfScene(p);
         if(temp < EPSILON){
             // hit
@@ -94,10 +91,10 @@ void main(){
 
     // light pos & col
     vec3 light_pos = vec3(3.5, 3.5, 3.5);
-    vec3 light_col = vec3(1.0, 1.0, 1.0);
+    vec3 light_col = vec3(0.7, 0.0, 0.7);
 
     // obj
-    vec3 object_color = vec3(1.0, 0.0, 0.5);
+    vec3 object_color = vec3(1.0, 1.0, 1.0);
 
     float dist = rayMarch(ray);
     if(dist == MAX_DIST){
@@ -105,7 +102,7 @@ void main(){
     } 
     else{
         vec3 frag_pos = ray.position + dist * ray.direction;
-        frag_pos = mod(frag_pos,2.0);
+        //frag_pos = mod(frag_pos,2.0);
         vec3 light_dir = normalize(light_pos - frag_pos);
         vec3 view_dir = normalize(eye - frag_pos);
 
@@ -128,7 +125,7 @@ void main(){
         float specular_radius = pow(max(dot(view_dir, reflect_dir), 0.0), 32);
         vec3 specular = specular_strength * specular_radius * light_col;  
 
-        vec3 color = (ambient + diffuse + specular) * object_color;
+        vec3 color = (ambient + diffuse + specular) * object_color;  // spec is creating a shading problem
         //vec3 color = vec3(dist/4.0);
         frag_color = vec4(color, 1.0);
     }
