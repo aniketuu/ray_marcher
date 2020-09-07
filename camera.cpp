@@ -52,6 +52,9 @@ void Camera::turn(int enm, float angle){
     switch(enm){
         case FORWARD:
             action = glm::angleAxis(glm::radians(angle), this->right_axis);
+            if(this->rot_count_x < 0.0f){
+                this->rot_count_x = this->rot_count_x + 90.0f;
+            }
             this->rot_count_x += angle;
             if(this->rot_count_x >= 90.0f){
                 this->rot_count_x = 0.0f;
@@ -73,6 +76,9 @@ void Camera::turn(int enm, float angle){
             break;
         case LEFT:
             action = glm::angleAxis(glm::radians(angle), this->up_axis);
+            if(this->rot_count_y < 0.0f){
+                this->rot_count_y = this->rot_count_y + 90.0f;
+            }
             this->rot_count_y += angle;
             if(this->rot_count_y >= 90.0f){
                 this->rot_count_y = 0.0f;
@@ -94,6 +100,9 @@ void Camera::turn(int enm, float angle){
             break;
         case UP:
             action = glm::angleAxis(glm::radians(angle), this->direction);
+            if(this->rot_count_z < 0.0f){
+                this->rot_count_z = this->rot_count_z + 360.0f;
+            }
             this->rot_count_z += angle;
             if(this->rot_count_z >= 360.0f){
                 this->rot_count_z = 0.0f;

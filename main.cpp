@@ -147,7 +147,7 @@ int main(){
                 SDL_SetRelativeMouseMode(SDL_TRUE);
                 int xpos, ypos;
                 SDL_GetRelativeMouseState(&xpos, &ypos);
-                camera.mouseMotion(xpos, ypos);                
+                camera.mouseMotion(xpos*3, ypos*3);                
             }
             
         }
