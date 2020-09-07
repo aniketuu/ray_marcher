@@ -7,7 +7,7 @@ Camera::Camera(glm::vec3 pos, glm::vec3 dir){
     this->up_axis = glm::vec3(0.0f, 1.0f, 0.0f);
     this->right_axis = glm::cross(this->direction, this->up_axis);
 
-    this->sensitivity = 0.015;
+    this->sensitivity = 0.020;
 
     this->roll = 0.0f;
 
@@ -166,7 +166,7 @@ glm::vec3 Camera::getRightAxis(){
 void Camera::loadProperties(){
     this->properties += "const int MAX_STEPS = 200;\n";
     this->properties += "const float START = 0.001;\n";
-    this->properties += "const float MAX_DIST = 100.0;\n";
+    this->properties += "const float MAX_DIST = 1000.0;\n";
     this->properties += "const float EPSILON = 0.001;\n";
     this->properties += "const float sensor_dist = 2.5;\n";
 }
@@ -185,12 +185,6 @@ void Camera::printDetails(){
 // setters
 void Camera::setPosition(glm::vec3 pos){
     this->position = pos;
-}
-
-// camera movement rigs
-
-void Camera::barellRoll(float inc){
-    this->turn(UP, inc);
 }
 
 

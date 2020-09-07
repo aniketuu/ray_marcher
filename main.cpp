@@ -27,6 +27,7 @@ int main(){
     Shader shader(v_path, f_path);
 
     shader.add("// CAMERA_PROPERTIES", camera.getProperties());
+    shader.addHelper("shaders/sdf_lib.GLSL");
     shader.compileShaders();
     shader.use();
 
@@ -39,22 +40,13 @@ int main(){
     bool running = true;
     SDL_Event event;
     while(running){
+        Uint32 timer_start = SDL_GetTicks();
         // clear
         display.clearScreen(0.4, 0.3, 0.7, 1.0);
 
         // rigs
         camera.move(camera.move_enum);
-        camera.turn(camera.rot_enum, 0.075);
-
-        if(barell_roll){
-            float inc = 0.25f;
-            camera.barellRoll(inc);
-            count += inc;
-            if(count == 360.0f){
-                count = 0.0f;
-                barell_roll = false;
-            }
-        }
+        camera.turn(camera.rot_enum, 0.25f);
 
         // uniforms
         
@@ -132,9 +124,6 @@ int main(){
                     case SDLK_ESCAPE:
                         running = false;
                         break;
-                    case SDLK_u:
-                        barell_roll = true;
-                        break;
                     case SDLK_k:
                         camera.printDetails();
                         break;
@@ -147,9 +136,15 @@ int main(){
                 SDL_SetRelativeMouseMode(SDL_TRUE);
                 int xpos, ypos;
                 SDL_GetRelativeMouseState(&xpos, &ypos);
-                camera.mouseMotion(xpos*3, ypos*3);                
+                camera.mouseMotion(xpos, ypos);                
             }
             
+        }
+        Uint32 timer_stop = SDL_GetTicks();
+        Uint32 timer_difference = timer_stop-timer_start;
+        Uint32 limiter = 16;
+        if(timer_difference < limiter){
+            SDL_Delay(limiter-timer_difference);
         }
     }
     return 0;

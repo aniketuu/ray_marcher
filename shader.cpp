@@ -38,6 +38,7 @@ void Shader::setPath(char type, char* path){
 Shader::Shader(char* v_path, char* f_path){
     this->setPath('V', v_path);
     this->setPath('F', f_path);
+    this->helper_count = 0;
 
     // load shaders
     this->loadShaders();
@@ -131,6 +132,40 @@ void Shader::use(){
 // external  defines
 void Shader::add(std::string target, std::string source){
     this->frag_source.replace(this->frag_source.find(target), target.length(), source);
+}
+
+void Shader::addHelper(std::string H_path){
+    // convert to char arr
+    int n = H_path.length();
+    char h_path[n+1];
+    strcpy(h_path, H_path.c_str());
+    // 1. load glsl code from shader files
+    std::ifstream hFileStream;
+    // ensure fstream  can throw exceptions
+    hFileStream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    // string to hold shaders
+    std::string hString;
+    // try
+    try{
+        // open files
+        hFileStream.open(h_path);
+        // create string streams and read file data in it
+        std::stringstream hStringStream;
+        hStringStream << hFileStream.rdbuf();
+        // close files
+        hFileStream.close();
+        // convert streams  to strings
+        this->helper_source = hStringStream.str();
+    }
+    catch(std::ifstream::failure& e){
+        printf("ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ\n");
+    }
+
+    // add 
+    std::string target = "// HELPER" + std::to_string(this->helper_count);
+    this->helper_count += 1;
+    this->add(target, this->helper_source);
+    this->helper_source = "";
 }
 
 // set uniforms

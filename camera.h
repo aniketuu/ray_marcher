@@ -53,7 +53,6 @@ public:
     void setTracker(glm::quat tra);
 
     // movement rigs
-    void barellRoll(float inc);
     int move_enum; // movement
     int rot_enum; // rotation
     float rot_count_x;

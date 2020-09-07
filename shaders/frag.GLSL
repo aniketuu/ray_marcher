@@ -2,6 +2,15 @@
 
 // CAMERA_PROPERTIES
 
+// HELPER0
+// HELPER1
+// HELPER2
+// HELPER3
+// HELPER4
+// HELPER5
+// HELPER6
+// HELPER7
+
 struct Camera{
     vec3 position;
     vec3 direction;
@@ -19,13 +28,8 @@ uniform Camera camera;
 
 out vec4 frag_color;
 
-float sdfSphere(vec3 p, float r){
-    vec3 trans = vec3(1.0);
-    p = mod(p,2.0);
-    p = p -trans;
-    //p = abs(p);
-   //p = vec3(mod(p.x,2.0), p.y, p.z);
-    return length(p) - r;
+void sdfSphere(vec3 p, inout float r){
+    r = length(p) - r;
 }
 
 float sdfBox( vec3 p, vec3 b )
@@ -35,12 +39,13 @@ float sdfBox( vec3 p, vec3 b )
 }
 
 float sdfScene(vec3 p){
-    // box
-    vec3 b = vec3(1.0, 1.0, 1.0);
-    vec3 tr = vec3(3.5, -1.5, 0.0);
-    //return sdfBox(p, b);
-    return sdfSphere(p, 0.4);
+    pMod3(p,vec3(2.0));
+    vec3 a = vec3(0.0);
+    vec3 b = vec3(1.0);
+    float box = fSphere(p, 0.4);
+    return box;
 }
+
 
 float rayMarch(Ray ray){
     vec3 p = ray.position;

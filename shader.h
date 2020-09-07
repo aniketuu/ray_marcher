@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdio>
+#include <cstring>
 #include <string>
 #include <sstream>
 #include <fstream>
@@ -13,10 +14,12 @@ private:
     char* vert_path;
     char* frag_path;
     GLuint program_id;
+    int helper_count;
 public:
     // source of shaders
     std::string vert_source;
     std::string frag_source;
+    std::string helper_source;
 
     // getters and setters
     GLuint getProgramId();
@@ -33,6 +36,7 @@ public:
 
     // external deefines
     void add(std::string target, std::string source);
+    void addHelper(std::string h_path);
 
     // set uniforms
     void setInt(std::string name, int n);
