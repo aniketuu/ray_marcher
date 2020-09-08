@@ -7,7 +7,7 @@ Camera::Camera(glm::vec3 pos, glm::vec3 dir){
     this->up_axis = glm::vec3(0.0f, 1.0f, 0.0f);
     this->right_axis = glm::cross(this->direction, this->up_axis);
 
-    this->sensitivity = 0.020;
+    this->sensitivity = 0.080;
 
     this->roll = 0.0f;
 

@@ -25,8 +25,7 @@ int main(){
     char v_path[] = "shaders/vert.GLSL";
     char f_path[] = "shaders/frag.GLSL";
     Shader shader(v_path, f_path);
-
-    shader.add("// CAMERA_PROPERTIES", camera.getProperties());
+    shader.addHelper("shaders/defines.GLSL");
     shader.addHelper("shaders/sdf_lib.GLSL");
     shader.compileShaders();
     shader.use();
@@ -51,10 +50,9 @@ int main(){
         // uniforms
         
         shader.setVec2f("display_res", (float)display_width, (float)display_height);
-        shader.setVec3f("camera.position", camera.getPosition());
-        shader.setVec3f("camera.direction", camera.getDirection());
-        shader.setVec3f("camera.up_axis", camera.getUpAxis());
-        shader.setVec3f("camera.right_axis", camera.getRightAxis());
+        shader.setVec3f("camera_position", camera.getPosition());
+        shader.setVec3f("camera_direction", camera.getDirection());
+        shader.setVec3f("camera_up", camera.getUpAxis());
         
 
         // render

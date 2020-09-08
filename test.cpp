@@ -2,12 +2,12 @@
 #include <string>
 using namespace std;
 
+#define SHADOWS_ENABLED         false
+
 int main(){
-    string a = "hey there how are ya can you see nwe; lineand tabs";
-    string b = "YAa";
-    string c = "ya";
-    a.replace(a.find("ya"), 2, b);
-    cout<<a;
+    #if SHADOWS_ENABLED
+        printf("YOOO\n");
+    #endif
 }
 
 /*./

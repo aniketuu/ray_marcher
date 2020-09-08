@@ -10,7 +10,7 @@ display.o: display.h display.cpp
 FullscreenQuad.o: FullscreenQuad.h FullscreenQuad.cpp
 	g++ -c FullscreenQuad.cpp
 
-shader.o: shader.h shader.cpp shaders/vert.GLSL shaders/frag.GLSL shaders/sdf_lib.GLSL
+shader.o: shader.h shader.cpp shaders/vert.GLSL shaders/frag.GLSL shaders/defines.GLSL shaders/sdf_lib.GLSL
 	g++ -c shader.cpp
 
 camera.o: camera.h camera.cpp
