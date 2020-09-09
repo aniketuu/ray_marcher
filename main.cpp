@@ -25,7 +25,7 @@ int main(){
     char v_path[] = "shaders/vert.GLSL";
     char f_path[] = "shaders/frag.GLSL";
     Shader shader(v_path, f_path);
-    shader.addHelper("shaders/defines.GLSL");
+    shader.addGLSL("// DEFINES", "shaders/defines.GLSL");
     shader.addHelper("shaders/sdf_lib.GLSL");
     shader.compileShaders();
     shader.use();
@@ -45,7 +45,7 @@ int main(){
 
         // rigs
         camera.move(camera.move_enum);
-        camera.turn(camera.rot_enum, 0.25f);
+        camera.turn(camera.rot_enum, 0.75f);
 
         // uniforms
         

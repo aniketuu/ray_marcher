@@ -7,7 +7,7 @@ Camera::Camera(glm::vec3 pos, glm::vec3 dir){
     this->up_axis = glm::vec3(0.0f, 1.0f, 0.0f);
     this->right_axis = glm::cross(this->direction, this->up_axis);
 
-    this->sensitivity = 0.080;
+    this->sensitivity = 0.04;
 
     this->roll = 0.0f;
 
@@ -25,22 +25,22 @@ Camera::Camera(glm::vec3 pos, glm::vec3 dir){
 void Camera::move(int enm){
     switch(enm){
         case FORWARD:
-            this->position += this->direction * this->sensitivity;
+            this->position += this->direction * this->sensitivity * MOVEMENT_FACTOR;
             break;
         case BACKWARD:
-            this->position -= this->direction * this->sensitivity;
+            this->position -= this->direction * this->sensitivity * MOVEMENT_FACTOR;
             break;
         case RIGHT:
-            this->position += this->right_axis * this->sensitivity;
+            this->position += this->right_axis * this->sensitivity * MOVEMENT_FACTOR;
             break;
         case LEFT:
-            this->position -= this->right_axis * this->sensitivity;
+            this->position -= this->right_axis * this->sensitivity * MOVEMENT_FACTOR;
             break;
         case UP:
-            this->position += this->up_axis * this->sensitivity;
+            this->position += this->up_axis * this->sensitivity * MOVEMENT_FACTOR;
             break;
         case DOWN:
-            this->position -= this->up_axis * this->sensitivity;
+            this->position -= this->up_axis * this->sensitivity * MOVEMENT_FACTOR;
             break;
         default:
             break;
@@ -176,10 +176,10 @@ std::string Camera::getProperties(){
 }
 
 void Camera::printDetails(){
-    //printf("%f %f %f\n", this->position.x, this->position.y, this->position.z);
+    printf("%f %f %f\n", this->position.x, this->position.y, this->position.z);
     //printf("%f %f %f\n", this->direction.x, this->direction.y, this->direction.z);
     //printf("%f\n\n", this->roll);
-    printf("%f %f %f\n", this->rot_count_x, this->rot_count_y, this->rot_count_z);
+    //printf("%f %f %f\n", this->rot_count_x, this->rot_count_y, this->rot_count_z);
 }
 
 // setters

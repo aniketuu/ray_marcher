@@ -1,5 +1,7 @@
 #version 330 core
 
+// DEFINES
+
 // HELPER0
 // HELPER1
 // HELPER2
@@ -17,117 +19,137 @@ uniform vec3 camera_up;
 
 out vec4 frag_color;
 
-vec4 getDirection(vec2 uv){
+vec3 getDirection(vec2 uv){
     vec3 camera_right = cross(camera_direction, camera_up);
-    vec3 ray_dir = SENSOR_DISTANCE*camera_direction + uv.x*camera_right + uv.y*camera_up;
-    return vec4(normalize(ray_dir), 0.0);
+    vec3 ray_dir = vec3(SENSOR_DISTANCE * camera_direction + uv.x * camera_right + uv.y * camera_up);
+    return normalize(ray_dir);
 }
 
-float DE(vec4 p){
-    //pFold(p.xyz, 4.0);
-    float sp =  de_sphere(p.xyz, 0.8);
-    return sp;
-}
-
-vec3 estimateNormal(vec4 p, float dx) {
-    const vec3 k = vec3(1,-1,0);
-    return normalize(k.xyy*DE(p + k.xyyz*dx) +
-					 k.yyx*DE(p + k.yyxz*dx) +
-					 k.yxy*DE(p + k.yxyz*dx) +
-					 k.xxx*DE(p + k.xxxz*dx));
-}
-
-vec4 rayMarch(inout vec4 p, vec4 ray, float sharpness, float td){
-    float dist = MIN_DIST;
-    float s = 0.0;
-    float min_d = 1.0;
-    for(int i = 0; i<MAX_STEPS; i++){
-        dist = DE(p);
-        if(dist <= EPSILON){
-            s += dist/MIN_DIST;
-            break;
+float DE(vec3 p){
+    float n;float iters = 5.0; float t;
+    for(n = 0.0; n<iters; n++){
+        p = abs(p);
+        if(p.x < p.y){
+            t = p.x; p.x = p.y; p.y = t; 
         }
-        else if(td >= MAX_DIST){
-            break;
+        if(p.y < p.z){
+            t = p.y; p.y = p.z; p.z = t;
         }
-        td += dist;
-        p += ray * dist;
-        min_d = min(min_d, sharpness * dist/td);
+        if(p.x < p.y){
+            t = p.x; p.x = p.y; p.y = t; 
+        }
+        p.x = p.x *3.0 -2.0;
+        p.y = p.y *3.0 -2.0;
+        p.z = p.z *3.0 -2.0;
+        if(p.z < -1.0){
+            p.z += 2.0;
+        }
     }
-    return vec4(dist, s, td, min_d);
+    return (length(p)-1.5) * pow(3.0, -iters);
 }
 
-vec4 scene(inout vec4 origin, inout vec4 ray, float vignette, float td){
-    vec4 p = origin;
-    vec4 d_s_td_min_d = rayMarch(p, ray, GLOW_SHARPNESS, td);
-    float d = d_s_td_min_d.x;
-    float s = d_s_td_min_d.y;
-    td = d_s_td_min_d.z;
-    float m = d_s_td_min_d.w;
+vec4 rayMarch(inout vec3 ro, inout vec3 rd, float glow_sharpness){
+    float total_dist = MIN_DIST;
+    float present_radius = 0.0;
+    float glow_factor = 1.0;
+    ro = ro + total_dist * rd;
+    float steps;
+    for(steps = 0.0; steps<MAX_STEPS;steps+=1.0){
+        present_radius = DE(ro);
+        if(present_radius <= EPSILON){
+            break;
+        }
+        if(total_dist >= MAX_DIST){
+            break;
+        }
+        ro += present_radius * rd;
+        total_dist += present_radius;
+        glow_factor = min(glow_factor, glow_sharpness * present_radius / total_dist);
+    }
+    steps = 1.0 - steps/MAX_STEPS;
+    return vec4(total_dist, steps, glow_factor, present_radius);
+}
 
-    // determine col for fragment
+vec3 estimateNormal(vec3 p){
+    float x = DE(vec3(p.x + EPSILON, p.yz)) - DE(vec3(p.x - EPSILON, p.yz));
+    float y = DE(vec3(p.x,p.y + EPSILON, p.z)) - DE(vec3(p.x, p.y - EPSILON, p.z));
+    float z = DE(vec3(p.xy, p.z + EPSILON)) - DE(vec3(p.xy, p.z - EPSILON));
+    return normalize(vec3(x,y,z)); 
+}
+
+float shadow(vec3 ro, vec3 rd, float mint, float maxt, float f){
+    float k = 1.0;
+    for( float t=mint; t<maxt; ){
+        float h = DE(ro + rd*t);
+        if( h<EPSILON ){
+            return 0.0;
+        }
+        k = min( k, f*h/t );
+        t += h;
+    }
+    return k;
+}
+
+vec4 scene(inout vec3 p, inout vec3 ray){
+    // ray march
+    vec4 td_s_g_pr = rayMarch(p, ray, GLOW_SHARPNESS);
+    float dist = td_s_g_pr.x;
+    float step_factor = td_s_g_pr.y;
+    float g_factor = td_s_g_pr.z;
+    float hit_identifier = td_s_g_pr.w;
+
+    // get color
     vec3 col = vec3(0.0);
-    if(d < MIN_DIST){
-        // get ormal and reflected
-        vec3 normal = estimateNormal(p, MIN_DIST * 10.0);
-        vec3 reflected = ray.xyz - 2.0*dot(ray.xyz, normal) * normal;
-        
-        // object color
-        vec3 orignal_col = vec3(1.0, 0.5, 0.7);
+    if(hit_identifier < EPSILON){
+        //return vec4(1.0);
+        vec3 normal = estimateNormal(p);
+        vec3 reflected = ray - 2 * (dot(ray, normal)) * normal;
 
-        // shadowws
+        // shadow factor
         float k = 1.0;
-        #if SHADOWS_ENABLED
-            vec4 light_pt = p;
-            light_pt.xyz += normal * MIN_DIST * 10;
-            vec4 rm = rayMarch(light_pt, vec4(LIGHT_DIRECTION, 0.0), SHADOW_SHARPNESS, 0.0);
-            k = rm.w * min(1.0, rm.z);
-        #endif        
 
-        // specular
-        #if SPECULAR_HIGHLIGHT > 0
+        // check for shadows
+        #if SHADOW_ENABLED
+            vec3 shade_pt = p;
+            shade_pt += normal * MIN_DIST * 10;
+            k = shadow(shade_pt, LIGHT_DIRECTION, MIN_DIST, MAX_DIST, 8.0);
+        #endif
+        // add specular
+        #if SPECULAR_HIGHLIGHT
             float specular = max(dot(reflected, LIGHT_DIRECTION), 0.0);
             specular = pow(specular, SPECULAR_HIGHLIGHT);
             col += specular * k * LIGHT_COLOR;
         #endif
 
-        // diffuse
-        #if DIFFUSE_ENHANCED_ENABLED
-            k = min(k, SHADOW_DARKNESS * 0.5 *(dot(normal, LIGHT_DIRECTION)-1.0) + 1.0);        
-        #elif DIFFUSE_ENABLED
-            k = min(k, dot(normal, LIGHT_DIRECTION));
-        #endif
-        
-        // lghtening the shadows
-        k = max(k, 1.0 - SHADOW_DARKNESS);
-        col += orignal_col * LIGHT_COLOR * k;
+        // add diffuse
+        vec3 orignal_color = vec3(0.2, 0.4, 0.8);
+        float lambert = max(dot(normal,LIGHT_DIRECTION), 0.0);
+        k = min(k, lambert);
+        k = max(k, 1.0 - SHADOW_DARKNESS); // nw shadows wont be fully black
+        col += orignal_color * LIGHT_COLOR * k;
 
-        // ambient
-        float a = 1.0 / (1.0 + s * AMBIENT_OCCLUSION_STRENGTH);
-        col += (1.0 - a) * AMBIENT_OCCLUSION_COLOR_DELTA;
+        // temp ambient 
+        col += orignal_color * LIGHT_COLOR * 0.1 * step_factor;
 
+        // fog
         #if FOG_ENABLED
-            a = td / MAX_DIST;
+            float a = dist / MAX_DIST;
+            a *= FOG_MULTIPLIER;
 			col = (1.0 - a) * col + a * BACKGROUND_COLOR;
         #endif
-        
     }
     else{
         col += BACKGROUND_COLOR;
 
         #if GLOW_ENABLED
-            col += (1.0 - m) * (1.0 - m) * GLOW_COLOR_DELTA;
+            col += (1.0 - g_factor) * (1.0 - g_factor) * GLOW_COLOR_DELTA;
         #endif
 
-        col *= vignette;
-
-        // render sun
         #if SUN_ENABLED
-			float sun_spec = dot(ray.xyz, LIGHT_DIRECTION) - 1.0 + SUN_SIZE;
+			float sun_spec = dot(ray, LIGHT_DIRECTION) - 1.0 + SUN_SIZE;
 			sun_spec = min(exp(sun_spec * SUN_SHARPNESS / SUN_SIZE), 1.0);
 			col += LIGHT_COLOR * sun_spec;
 		#endif
-
     }
     return vec4(col, 1.0);
 }
@@ -139,11 +161,9 @@ void main(){
     uv.x *= display_res.x/display_res.y; 
 
     // getting ray origin and direction
-    vec4 ro = vec4(camera_position, 1.0);
-    vec4 rd = getDirection(uv);
+    vec3 ro = camera_position;
+    vec3 rd = getDirection(uv);
 
-    float vignette = 1.0; - VIGNETTE_STRENGTH * length(screen_pos - 0.5);
-
-    frag_color = scene(ro, rd, vignette, 0.0);
+    frag_color = scene(ro, rd);
 }
 

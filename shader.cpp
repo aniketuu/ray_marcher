@@ -168,6 +168,39 @@ void Shader::addHelper(std::string H_path){
     this->helper_source = "";
 }
 
+void Shader::addGLSL(std::string target, std::string H_path){
+    // convert to char arr
+    int n = H_path.length();
+    char h_path[n+1];
+    strcpy(h_path, H_path.c_str());
+    std::string source = "";
+    // 1. load glsl code from shader files
+    std::ifstream hFileStream;
+    // ensure fstream  can throw exceptions
+    hFileStream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    // string to hold shaders
+    std::string hString;
+    // try
+    try{
+        // open files
+        hFileStream.open(h_path);
+        // create string streams and read file data in it
+        std::stringstream hStringStream;
+        hStringStream << hFileStream.rdbuf();
+        // close files
+        hFileStream.close();
+        // convert streams  to strings
+        source = hStringStream.str();
+    }
+    catch(std::ifstream::failure& e){
+        printf("ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ\n");
+    }
+
+    // add stuff
+    this->add(target, source);
+    source = "";
+}
+
 // set uniforms
 void Shader::setInt(std::string name, int n){
     this->use();

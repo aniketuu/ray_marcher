@@ -37,6 +37,7 @@ public:
     // external deefines
     void add(std::string target, std::string source);
     void addHelper(std::string h_path);
+    void addGLSL(std::string target, std::string h_path);
 
     // set uniforms
     void setInt(std::string name, int n);
