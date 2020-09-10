@@ -11,13 +11,13 @@
 #define SPECULAR_HIGHLIGHT                  0
 #define SHADOW_ENABLED                      0
 #define SHADOW_DARKNESS                     0.8
-#define AMBIENT_OCCLUSION_STRENGTH          0.01
+#define AMBIENT_OCCLUSION_STRENGTH          0.05
 #define FOG_ENABLED                         1
 #define FOG_MULTIPLIER                      2.0
 #define GLOW_ENABLED                        0
-#define GLOW_COLOR_DELTA                    vec3(-0.2, 0.5, -0.2)
+#define GLOW_COLOR_DELTA                    vec3(-0.2, -0.2, -0.2)
 #define GLOW_SHARPNESS                      4.0 
-#define SUN_ENABLED                         0
+#define SUN_ENABLED                         1
 #define SUN_SIZE                            0.005
 #define SUN_SHARPNESS                       2.0
 

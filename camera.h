@@ -4,7 +4,7 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/quaternion.hpp"
 
-#define MOVEMENT_FACTOR 0.2f
+#define MOVEMENT_FACTOR 1.2f
 
 enum {
     FORWARD,
@@ -30,6 +30,8 @@ private:
 
     std::string properties;
 public:
+    float movement_sensitivity;
+    float rotation_sensitivity;
     Camera(glm::vec3 pos, glm::vec3 dir);
     void move(int);
     void turn(int, float);
@@ -40,7 +42,6 @@ public:
 
 
     // utils
-    void loadProperties();
     void printDetails();
 
     // getters

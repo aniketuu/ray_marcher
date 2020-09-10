@@ -2,16 +2,6 @@
 
 // DEFINES
 
-// HELPER0
-// HELPER1
-// HELPER2
-// HELPER3
-// HELPER4
-// HELPER5
-// HELPER6
-// HELPER7
-
-
 uniform vec2 display_res;
 uniform vec3 camera_position;
 uniform vec3 camera_direction;
@@ -19,34 +9,16 @@ uniform vec3 camera_up;
 
 out vec4 frag_color;
 
+// LIBRARY
+
 vec3 getDirection(vec2 uv){
     vec3 camera_right = cross(camera_direction, camera_up);
     vec3 ray_dir = vec3(SENSOR_DISTANCE * camera_direction + uv.x * camera_right + uv.y * camera_up);
     return normalize(ray_dir);
 }
 
-float DE(vec3 p){
-    float n;float iters = 5.0; float t;
-    for(n = 0.0; n<iters; n++){
-        p = abs(p);
-        if(p.x < p.y){
-            t = p.x; p.x = p.y; p.y = t; 
-        }
-        if(p.y < p.z){
-            t = p.y; p.y = p.z; p.z = t;
-        }
-        if(p.x < p.y){
-            t = p.x; p.x = p.y; p.y = t; 
-        }
-        p.x = p.x *3.0 -2.0;
-        p.y = p.y *3.0 -2.0;
-        p.z = p.z *3.0 -2.0;
-        if(p.z < -1.0){
-            p.z += 2.0;
-        }
-    }
-    return (length(p)-1.5) * pow(3.0, -iters);
-}
+// DE
+
 
 vec4 rayMarch(inout vec3 ro, inout vec3 rd, float glow_sharpness){
     float total_dist = MIN_DIST;
@@ -122,7 +94,7 @@ vec4 scene(inout vec3 p, inout vec3 ray){
         #endif
 
         // add diffuse
-        vec3 orignal_color = vec3(0.2, 0.4, 0.8);
+        vec3 orignal_color = vec3(0.8, 0.0, 1.0);
         float lambert = max(dot(normal,LIGHT_DIRECTION), 0.0);
         k = min(k, lambert);
         k = max(k, 1.0 - SHADOW_DARKNESS); // nw shadows wont be fully black
@@ -151,6 +123,10 @@ vec4 scene(inout vec3 p, inout vec3 ray){
 			col += LIGHT_COLOR * sun_spec;
 		#endif
     }
+    float gamma = 2.2;
+    col.x = pow(col.x, 1.0/gamma);
+    col.y = pow(col.y, 1.0/gamma);
+    col.z = pow(col.z, 1.0/gamma);
     return vec4(col, 1.0);
 }
 

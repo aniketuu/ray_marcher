@@ -14,7 +14,6 @@ private:
     char* vert_path;
     char* frag_path;
     GLuint program_id;
-    int helper_count;
 public:
     // source of shaders
     std::string vert_source;
@@ -34,9 +33,8 @@ public:
     void checkCompileErrors(GLuint id, std::string);
     void use();
 
-    // external deefines
+    // external GLSL
     void add(std::string target, std::string source);
-    void addHelper(std::string h_path);
     void addGLSL(std::string target, std::string h_path);
 
     // set uniforms

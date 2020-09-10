@@ -26,7 +26,8 @@ int main(){
     char f_path[] = "shaders/frag.GLSL";
     Shader shader(v_path, f_path);
     shader.addGLSL("// DEFINES", "shaders/defines.GLSL");
-    shader.addHelper("shaders/sdf_lib.GLSL");
+    shader.addGLSL("// DE", "shaders/menger.GLSL");
+    shader.addGLSL("// LIBRARY", "shaders/sdf_lib.GLSL");
     shader.compileShaders();
     shader.use();
 
@@ -45,7 +46,7 @@ int main(){
 
         // rigs
         camera.move(camera.move_enum);
-        camera.turn(camera.rot_enum, 0.75f);
+        camera.turn(camera.rot_enum, 0.75f * camera.rotation_sensitivity);
 
         // uniforms
         
@@ -54,7 +55,12 @@ int main(){
         shader.setVec3f("camera_direction", camera.getDirection());
         shader.setVec3f("camera_up", camera.getUpAxis());
         
-
+       //Uint32 pt = SDL_GetTicks();
+       //float iTime = (float)pt/1000.0;
+       //glm::vec2 iRes = glm::vec2((float)display_width, (float)display_height);
+       //shader.setFloat("iTime", iTime);
+       //shader.setVec2f("iResolution", iRes);
+        
         // render
         fullscreen_quad.bindObjects();
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
@@ -125,17 +131,29 @@ int main(){
                     case SDLK_k:
                         camera.printDetails();
                         break;
+                    case SDLK_UP:
+                        camera.movement_sensitivity *= 2.0;
+                        break;
+                    case SDLK_DOWN:
+                        camera.movement_sensitivity *= 0.5;
+                        break;
+                    case SDLK_RIGHT:
+                        camera.rotation_sensitivity *= 2.0;
+                        break;
+                    case SDLK_LEFT:
+                        camera.rotation_sensitivity *= 0.5;
+                        break; 
                     default:
                         break;
                 }
             }
             
-            else if(event.type == SDL_MOUSEMOTION){
+            /*else if(event.type == SDL_MOUSEMOTION){
                 SDL_SetRelativeMouseMode(SDL_TRUE);
                 int xpos, ypos;
                 SDL_GetRelativeMouseState(&xpos, &ypos);
                 camera.mouseMotion(xpos, ypos);                
-            }
+            }*/
             
         }
         Uint32 timer_stop = SDL_GetTicks();

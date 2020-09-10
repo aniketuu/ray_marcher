@@ -8,12 +8,13 @@ Camera::Camera(glm::vec3 pos, glm::vec3 dir){
     this->right_axis = glm::cross(this->direction, this->up_axis);
 
     this->sensitivity = 0.04;
+    this->movement_sensitivity = 0.01;
+    this->rotation_sensitivity = 0.1;
 
     this->roll = 0.0f;
 
     this->properties = "";
-    this->loadProperties();
-
+    
     // rig
     this->move_enum = NONE;
     this->rot_enum = NONE;
@@ -25,22 +26,22 @@ Camera::Camera(glm::vec3 pos, glm::vec3 dir){
 void Camera::move(int enm){
     switch(enm){
         case FORWARD:
-            this->position += this->direction * this->sensitivity * MOVEMENT_FACTOR;
+            this->position += this->direction * movement_sensitivity;
             break;
         case BACKWARD:
-            this->position -= this->direction * this->sensitivity * MOVEMENT_FACTOR;
+            this->position -= this->direction * movement_sensitivity;
             break;
         case RIGHT:
-            this->position += this->right_axis * this->sensitivity * MOVEMENT_FACTOR;
+            this->position += this->right_axis * movement_sensitivity;
             break;
         case LEFT:
-            this->position -= this->right_axis * this->sensitivity * MOVEMENT_FACTOR;
+            this->position -= this->right_axis * movement_sensitivity;
             break;
         case UP:
-            this->position += this->up_axis * this->sensitivity * MOVEMENT_FACTOR;
+            this->position += this->up_axis * movement_sensitivity;
             break;
         case DOWN:
-            this->position -= this->up_axis * this->sensitivity * MOVEMENT_FACTOR;
+            this->position -= this->up_axis * movement_sensitivity;
             break;
         default:
             break;
@@ -162,18 +163,6 @@ glm::vec3 Camera::getRightAxis(){
     return this->right_axis;
 }
 
-// utils
-void Camera::loadProperties(){
-    this->properties += "const int MAX_STEPS = 200;\n";
-    this->properties += "const float START = 0.001;\n";
-    this->properties += "const float MAX_DIST = 1000.0;\n";
-    this->properties += "const float EPSILON = 0.001;\n";
-    this->properties += "const float sensor_dist = 2.5;\n";
-}
-
-std::string Camera::getProperties(){
-    return this->properties;
-}
 
 void Camera::printDetails(){
     printf("%f %f %f\n", this->position.x, this->position.y, this->position.z);
