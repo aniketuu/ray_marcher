@@ -1,12 +1,21 @@
-float DE(vec3 p){
-    float iters = 6.0;
-    float i;
-    for(i = 0.0; i<iters; i++){
-        pFoldAbs(p);
-        pFoldMenger(p);
-        p = p * 3.0 - 2.0;
-        pFoldPlane(p, vec3(0.0, 0.0, 1.0), -1.0);
+float map(vec3 p){
+    float d = de_box(p, vec3(1.0));
+    float res = d;
+    float s = 1.0;
+    for(int m = 0; m<4; m++){
+        vec3 a = mod(p * s, 2.0) - 1.0;
+        s *= 3.0;
+        vec3 r = abs(1.0 - 3.0*abs(a));
+        float da = max(r.x, r.y);
+        float db = max(r.y, r.z);
+        float dc = max(r.z, r.x);
+        float c = (min(da, min(db,dc)) - 1.0)/s;
+        if(c > d){
+            d = c;
+            res = d;
+        }
     }
-    return de_box(p,vec3(1.5)) * pow(3.0, -iters);
-    
+    vec3 norm = vec3(0.57735);
+    float pl = dot(p, norm);
+    return max(res,pl);
 }

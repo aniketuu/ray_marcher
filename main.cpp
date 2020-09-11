@@ -25,9 +25,9 @@ int main(){
     char v_path[] = "shaders/vert.GLSL";
     char f_path[] = "shaders/frag.GLSL";
     Shader shader(v_path, f_path);
-    shader.addGLSL("// DEFINES", "shaders/defines.GLSL");
-    shader.addGLSL("// DE", "shaders/menger.GLSL");
-    shader.addGLSL("// LIBRARY", "shaders/sdf_lib.GLSL");
+    shader.addGLSL("//  SETTINGS", "shaders/settings.GLSL");
+    shader.addGLSL("//  MAP", "shaders/apollonian.GLSL");
+    shader.addGLSL("//  SDF LIBRARY", "shaders/sdf_lib.GLSL");
     shader.compileShaders();
     shader.use();
 
@@ -50,16 +50,13 @@ int main(){
 
         // uniforms
         
-        shader.setVec2f("display_res", (float)display_width, (float)display_height);
+        shader.setVec2f("iResolution", (float)display_width, (float)display_height);
         shader.setVec3f("camera_position", camera.getPosition());
         shader.setVec3f("camera_direction", camera.getDirection());
         shader.setVec3f("camera_up", camera.getUpAxis());
-        
-       //Uint32 pt = SDL_GetTicks();
-       //float iTime = (float)pt/1000.0;
-       //glm::vec2 iRes = glm::vec2((float)display_width, (float)display_height);
-       //shader.setFloat("iTime", iTime);
-       //shader.setVec2f("iResolution", iRes);
+        Uint32 pt = SDL_GetTicks();
+        float iTime = (float)pt/1000.0;
+        shader.setFloat("iTime", iTime);
         
         // render
         fullscreen_quad.bindObjects();
@@ -148,12 +145,12 @@ int main(){
                 }
             }
             
-            /*else if(event.type == SDL_MOUSEMOTION){
+            else if(event.type == SDL_MOUSEMOTION){
                 SDL_SetRelativeMouseMode(SDL_TRUE);
                 int xpos, ypos;
                 SDL_GetRelativeMouseState(&xpos, &ypos);
                 camera.mouseMotion(xpos, ypos);                
-            }*/
+            }
             
         }
         Uint32 timer_stop = SDL_GetTicks();

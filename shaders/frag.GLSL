@@ -1,58 +1,86 @@
 #version 330 core
 
-// DEFINES
-
-uniform vec2 display_res;
-uniform vec3 camera_position;
-uniform vec3 camera_direction;
-uniform vec3 camera_up;
+uniform vec2    iResolution;
+uniform float   iTime;
+uniform vec3    camera_position;
+uniform vec3    camera_direction;
+uniform vec3    camera_up;
 
 out vec4 frag_color;
 
-// LIBRARY
+//  SETTINGS
+//  SDF LIBRARY
 
 vec3 getDirection(vec2 uv){
     vec3 camera_right = cross(camera_direction, camera_up);
-    vec3 ray_dir = vec3(SENSOR_DISTANCE * camera_direction + uv.x * camera_right + uv.y * camera_up);
+    vec3 ray_dir = vec3(CAMERA_SENSOR_DISTANCE * camera_direction + uv.x * camera_right + uv.y * camera_up);
     return normalize(ray_dir);
 }
 
-// DE
+//  MAP
 
-
-vec4 rayMarch(inout vec3 ro, inout vec3 rd, float glow_sharpness){
-    float total_dist = MIN_DIST;
-    float present_radius = 0.0;
-    float glow_factor = 1.0;
-    ro = ro + total_dist * rd;
-    float steps;
-    for(steps = 0.0; steps<MAX_STEPS;steps+=1.0){
-        present_radius = DE(ro);
-        if(present_radius <= EPSILON){
+float rayMarch(vec3 ro, vec3 rd){
+    float total_dist = 0.0;
+    //vec2 result = vec2(-1.0);
+    float present_dist = 1.0;
+    for(int i = 0; i<MAX_STEPS; i++){
+        if(present_dist < EPSILON || total_dist > MAX_DISTANCE){
             break;
         }
-        if(total_dist >= MAX_DIST){
-            break;
-        }
-        ro += present_radius * rd;
-        total_dist += present_radius;
-        glow_factor = min(glow_factor, glow_sharpness * present_radius / total_dist);
+        present_dist = map(ro + total_dist * rd);
+        //result = vec4(total_dist);
+        total_dist += present_dist;
     }
-    steps = 1.0 - steps/MAX_STEPS;
-    return vec4(total_dist, steps, glow_factor, present_radius);
+    if(total_dist > MAX_DISTANCE){
+        total_dist = -1.0;
+    }
+    return total_dist;
 }
 
-vec3 estimateNormal(vec3 p){
-    float x = DE(vec3(p.x + EPSILON, p.yz)) - DE(vec3(p.x - EPSILON, p.yz));
-    float y = DE(vec3(p.x,p.y + EPSILON, p.z)) - DE(vec3(p.x, p.y - EPSILON, p.z));
-    float z = DE(vec3(p.xy, p.z + EPSILON)) - DE(vec3(p.xy, p.z - EPSILON));
-    return normalize(vec3(x,y,z)); 
+float refMarch(vec3 ro, vec3 rd){
+    float total_dist = 0.0;
+    //vec2 result = vec2(-1.0);
+    float present_dist = 1.0;
+    for(int i = 0; i<REFLECTION_MAX_STEPS; i++){
+        if(present_dist < EPSILON || total_dist > REFLECTION_MAX_DISTANCE){
+            break;
+        }
+        present_dist = map(ro + total_dist * rd);
+        //result = vec4(total_dist);
+        total_dist += present_dist;
+    }
+    if(total_dist > REFLECTION_MAX_DISTANCE){
+        total_dist = -1.0;
+    }
+    return total_dist;
+}
+
+
+vec3 getNormal(vec3 p){
+    vec2 e = vec2(EPSILON/2.0, -EPSILON/2.0); 
+    return normalize(
+        e.xyy * map(p + e.xyy) + 
+        e.yyx * map(p + e.yyx) + 
+        e.yxy * map(p + e.yxy) + 
+        e.xxx * map(p + e.xxx));
+}
+
+float calcOcclusion(vec3 pos,vec3 nor){
+	float ao = 0.0;
+    float sca = 1.0;
+    for( int i=0; i<8; i++ ){
+        float h = EPSILON + 0.5*pow(float(i)/7.0,1.5);
+        float d = map( pos + h*nor );
+        ao += -(d-h)*sca;
+        sca *= 0.95;
+    }
+    return clamp( 1.0 - 0.8*ao, 0.0, 1.0 );
 }
 
 float shadow(vec3 ro, vec3 rd, float mint, float maxt, float f){
     float k = 1.0;
     for( float t=mint; t<maxt; ){
-        float h = DE(ro + rd*t);
+        float h = map(ro + rd*t);
         if( h<EPSILON ){
             return 0.0;
         }
@@ -61,85 +89,152 @@ float shadow(vec3 ro, vec3 rd, float mint, float maxt, float f){
     }
     return k;
 }
+vec3 getColorFronNormal(vec3 n, vec3 oc){
+    vec3 col = n * 0.5 + 0.5;
+    col = 1.0 - col;
+    col *= oc;
+    col *= vec3(cos(oc));
+    col.r = cos((col.b)*4.3)*0.2+0.8;
 
-vec4 scene(inout vec3 p, inout vec3 ray){
-    // ray march
-    vec4 td_s_g_pr = rayMarch(p, ray, GLOW_SHARPNESS);
-    float dist = td_s_g_pr.x;
-    float step_factor = td_s_g_pr.y;
-    float g_factor = td_s_g_pr.z;
-    float hit_identifier = td_s_g_pr.w;
+    clamp(col, 0.0, 1.0);
+    return col;
+}
 
-    // get color
-    vec3 col = vec3(0.0);
-    if(hit_identifier < EPSILON){
-        //return vec4(1.0);
-        vec3 normal = estimateNormal(p);
-        vec3 reflected = ray - 2 * (dot(ray, normal)) * normal;
+vec3 getColorFromPos(vec3 p){
+    // "floor(p)" is analogous to a unique ID - based on position.
+    vec3 ip = floor(p);
+    
+    // Unique random cell number.
+    float rnd = fract(sin(dot(ip, vec3(27.17, 112.61, 57.53)))*43758.5453);
+    
+    // Color up the objects in a cubic checkered arrangement using a subtle version
+    // of IQ's palette formula.
+    vec3 col = (fract(dot(ip, vec3(.5))) > .001)? 
+         .5 + .45*cos(mix(3., 4., rnd) + vec3(.9, .45, 1.5)) //vec3(.6, .3, 1.)
+         : vec3(.7 + .3*rnd);
+    
+    // Reverse the RGB channels on some of the objects, for a bit of variance.
+    if(fract(rnd*1183.5437 + .42)>.65) col = col.zyx;
+    
+    return col;
+}
 
-        // shadow factor
+vec3 doColor(vec3 pos, vec3 nor, vec3 ref, float march_res){
+        vec3 col = vec3(0.0);
+
+        
+        vec3 light_dir;
+        vec3 light_col;
+
+        vec3 orignal_col = getColorFromPos(pos * 2.0); 
+
+        #if GLOBAL_LIGHT
+            light_dir = GLOBAL_LIGHT_DIRECTION;
+            light_col = GLOBAL_LIGHT_COLOR ;
+        #else
+            vec3 light_pos = ro + vec3(0, 0.0, 0.5);
+            light_dir = light_pos - pos;
+            light_dir = normalize(light_dir);
+            light_col = GLOBAL_LIGHT_COLOR;
+        #endif
+
+        // shadows
         float k = 1.0;
-
-        // check for shadows
         #if SHADOW_ENABLED
-            vec3 shade_pt = p;
-            shade_pt += normal * MIN_DIST * 10;
-            k = shadow(shade_pt, LIGHT_DIRECTION, MIN_DIST, MAX_DIST, 8.0);
-        #endif
-        // add specular
-        #if SPECULAR_HIGHLIGHT
-            float specular = max(dot(reflected, LIGHT_DIRECTION), 0.0);
-            specular = pow(specular, SPECULAR_HIGHLIGHT);
-            col += specular * k * LIGHT_COLOR;
+            vec3 shad_pt = pos + nor * 4 * EPSILON;
+            k = shadow(shad_pt, light_dir, 0.01, 16.0, SHADOW_HARDNESS);
         #endif
 
-        // add diffuse
-        vec3 orignal_color = vec3(0.8, 0.0, 1.0);
-        float lambert = max(dot(normal,LIGHT_DIRECTION), 0.0);
+        // diffuse 
+        
+        col = orignal_col;
+        float lambert = max(dot(nor, light_dir), 0.0);
         k = min(k, lambert);
-        k = max(k, 1.0 - SHADOW_DARKNESS); // nw shadows wont be fully black
-        col += orignal_color * LIGHT_COLOR * k;
+        k = max(k, 1.0 - SHADOW_DARKNESS);
+        col  = orignal_col * light_col * k;
 
-        // temp ambient 
-        col += orignal_color * LIGHT_COLOR * 0.1 * step_factor;
+        // specular
+        #if SPECULAR_HIGHLIGHT
+            float specular = max(dot(ref, light_dir), 0.0);
+            specular = pow(specular, SPECULAR_HIGHLIGHT);
+            col += specular * light_col;
+        #endif
+
+        // ambient
+        float occ = calcOcclusion(pos, nor);
+        col += orignal_col * light_col * occ * occ * AMBIENT_STRENGTH;//* occ for menger instead of ambient strength
 
         // fog
         #if FOG_ENABLED
-            float a = dist / MAX_DIST;
+            float a = march_res / MAX_DISTANCE;
             a *= FOG_MULTIPLIER;
 			col = (1.0 - a) * col + a * BACKGROUND_COLOR;
+        #endif  
+
+    col = clamp(col, 0.0, 1.0);
+    return col;
+}
+
+vec3 render(vec3 ro, vec3 rd){
+    
+    vec3 col = vec3(0.0);
+
+    // ray march
+    float march_res = rayMarch(ro, rd);
+
+    if(march_res > 0.0){
+        
+        vec3 pos = ro + march_res * rd;
+        vec3 nor = getNormal(pos);
+        vec3 ref = rd - 2.0 * (dot(rd, nor)) * nor;
+        col = doColor(pos, nor, ref, march_res);
+
+        #if REFLECTION
+            float ref_res = refMarch(pos + 10 * EPSILON * nor, ref);
+            if(ref_res > 0.0){
+                vec3 ref_pos = pos + ref_res * ref;
+                vec3 ref_nor = getNormal(ref_pos);
+                vec3 ref_ref = ref - 2.0 * dot(ref,ref_nor) * ref_nor;
+                col += doColor(ref_pos, ref_nor, ref_ref, ref_res) * 0.3;
+            }
+            
         #endif
     }
     else{
-        col += BACKGROUND_COLOR;
-
-        #if GLOW_ENABLED
-            col += (1.0 - g_factor) * (1.0 - g_factor) * GLOW_COLOR_DELTA;
+        col = BACKGROUND_COLOR;
+        
+        #if GLOBAL_LIGHT
+            #if RENDER_SUN
+                float sun_spec = dot(rd, GLOBAL_LIGHT_DIRECTION) - 1.0 + RENDER_SUN_SIZE;
+			    sun_spec = min(exp(sun_spec * RENDER_SUN_SHARPNESS / RENDER_SUN_SIZE), 1.0);
+			    col += GLOBAL_LIGHT_COLOR * sun_spec;
+            #endif
         #endif
 
-        #if SUN_ENABLED
-			float sun_spec = dot(ray, LIGHT_DIRECTION) - 1.0 + SUN_SIZE;
-			sun_spec = min(exp(sun_spec * SUN_SHARPNESS / SUN_SIZE), 1.0);
-			col += LIGHT_COLOR * sun_spec;
-		#endif
     }
-    float gamma = 2.2;
-    col.x = pow(col.x, 1.0/gamma);
-    col.y = pow(col.y, 1.0/gamma);
-    col.z = pow(col.z, 1.0/gamma);
-    return vec4(col, 1.0);
+    // gamma correction
+    col.x = pow(col.x, 1.0/GAMMA);
+    col.y = pow(col.y, 1.0/GAMMA);
+    col.z = pow(col.z, 1.0/GAMMA);
+    return col;
 }
 
+
 void main(){
-    // uv
-    vec2 screen_pos = gl_FragCoord.xy/display_res;
-    vec2 uv = screen_pos  * 2.0 - 1.0;
-    uv.x *= display_res.x/display_res.y; 
-
-    // getting ray origin and direction
+    vec3 col = vec3(0.0);
     vec3 ro = camera_position;
-    vec3 rd = getDirection(uv);
-
-    frag_color = scene(ro, rd);
+    // Anti-Aliasing
+    for(float m = 0; m<AA; m++){
+        for(float n = 0; n<AA; n++){
+            // uv coordinates
+            vec2 o = vec2(m,n)/AA - 0.5;
+            vec2 uv = (2.0 * (gl_FragCoord.xy + o) - iResolution)/iResolution.y;
+            // get ray direction from uv
+            vec3 rd = getDirection(uv);
+            col += render(ro, rd);
+        }
+    }
+    col /= AA*AA;
+    frag_color = vec4(col, 1.0);
 }
 
