@@ -4,7 +4,7 @@ float apollonian(vec3 p)
    	float scale = 1.0;
 	orb = vec4(1000.0); 
 	
-	for( int i=0; i < 8;i++ )
+	for( int i=0; i < 6;i++ )
 	{
 		p = -1.0 + 2.0*fract(0.5*p+0.5);
         float r2 = dot(p,p);
@@ -17,6 +17,7 @@ float apollonian(vec3 p)
 	return 0.25*abs(p.y)/scale;
 }
 
+
 float map(vec3 p)
 {
     vec3 q=p;
@@ -28,5 +29,3 @@ float map(vec3 p)
     d=min(d,d1);
     return d;
 }
-
-/* move up to see *//

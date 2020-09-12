@@ -38,21 +38,21 @@ float rayMarch(vec3 ro, vec3 rd){
 }
 
 float refMarch(vec3 ro, vec3 rd){
-    float total_dist = 0.0;
+    float rtotal_dist = 0.0;
     //vec2 result = vec2(-1.0);
-    float present_dist = 1.0;
+    float rpresent_dist = 1.0;
     for(int i = 0; i<REFLECTION_MAX_STEPS; i++){
-        if(present_dist < EPSILON || total_dist > REFLECTION_MAX_DISTANCE){
+        if(rpresent_dist < EPSILON || rtotal_dist > REFLECTION_MAX_DISTANCE){
             break;
         }
-        present_dist = map(ro + total_dist * rd);
+        rpresent_dist = map(ro + rtotal_dist * rd);
         //result = vec4(total_dist);
-        total_dist += present_dist;
+        rtotal_dist += rpresent_dist;
     }
-    if(total_dist > REFLECTION_MAX_DISTANCE){
-        total_dist = -1.0;
+    if(rtotal_dist > REFLECTION_MAX_DISTANCE){
+        rtotal_dist = -1.0;
     }
-    return total_dist;
+    return rtotal_dist;
 }
 
 
@@ -90,12 +90,20 @@ float shadow(vec3 ro, vec3 rd, float mint, float maxt, float f){
     return k;
 }
 vec3 getColorFronNormal(vec3 n, vec3 oc){
-    vec3 col = n * 0.5 + 0.5;
+/*    vec3 col = n * 0.5 + 0.5;
     col = 1.0 - col;
     col *= oc;
     col *= vec3(cos(oc));
-    col.r = cos((col.b)*4.3)*0.2+0.8;
+    col.b = cos((col.b)*4.3)*0.5+0.5;
+    //col.g = cos((col.r)*2.6)*0.6+0.4;
+    //col.b = cos((col.g)*7.3)*0.7+0.3;
+*/
 
+    vec3 col = n * 0.5 + 0.5;
+    col *= oc;
+/* menger    col.b = cos((col.b)*4.3)*0.5+0.5;
+    col.x = cos(col.z) * col.x; 
+    */
     clamp(col, 0.0, 1.0);
     return col;
 }
@@ -105,12 +113,16 @@ vec3 getColorFromPos(vec3 p){
     vec3 ip = floor(p);
     
     // Unique random cell number.
-    float rnd = fract(sin(dot(ip, vec3(27.17, 112.61, 57.53)))*43758.5453);
-    
+    //float rnd = fract(sin(dot(ip, vec3(27.17, 112.61, 57.53)))*43758.5453);
+    float rnd = fract(sin(dot(ip, vec3(207.87, 12.61, 257.53)))*42258.5453);
     // Color up the objects in a cubic checkered arrangement using a subtle version
     // of IQ's palette formula.
+    /*
     vec3 col = (fract(dot(ip, vec3(.5))) > .001)? 
          .5 + .45*cos(mix(3., 4., rnd) + vec3(.9, .45, 1.5)) //vec3(.6, .3, 1.)
+         : vec3(.7 + .3*rnd);*/
+    vec3 col = (fract(dot(ip, vec3(.7))) > .001)? 
+         .5 + .75*cos(mix(3., 4., rnd) + vec3(2.6, .5, 1.2)) //vec3(.6, .3, 1.)
          : vec3(.7 + .3*rnd);
     
     // Reverse the RGB channels on some of the objects, for a bit of variance.
@@ -125,9 +137,9 @@ vec3 doColor(vec3 pos, vec3 nor, vec3 ref, float march_res){
         
         vec3 light_dir;
         vec3 light_col;
-
-        vec3 orignal_col = getColorFromPos(pos * 2.0); 
-
+        //vec3 orignal_col = vec3(0.2, 0.8, 0.4);
+        //vec3 orignal_col = getColorFronNormal(nor, vec3(0.7, 0.2, 0.8)); 
+        vec3 orignal_col = getColorFromPos(pos);
         #if GLOBAL_LIGHT
             light_dir = GLOBAL_LIGHT_DIRECTION;
             light_col = GLOBAL_LIGHT_COLOR ;
@@ -223,6 +235,7 @@ vec3 render(vec3 ro, vec3 rd){
 void main(){
     vec3 col = vec3(0.0);
     vec3 ro = camera_position;
+    //vec3 ro = 1.1*vec3(2.5*sin(0.25*iTime),-1.0+1.0*cos(iTime*.13),2.5*cos(0.25*iTime));
     // Anti-Aliasing
     for(float m = 0; m<AA; m++){
         for(float n = 0; n<AA; n++){

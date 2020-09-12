@@ -1,5 +1,7 @@
 float map(vec3 p){
-    float d = de_box(p, vec3(1.0));
+    //float box_size = sin(iTime * 0.75)*0.015 + 1.5;
+    float box_size = 2.5;
+    float d = de_box(p, vec3(box_size));
     float res = d;
     float s = 1.0;
     for(int m = 0; m<4; m++){
@@ -15,7 +17,10 @@ float map(vec3 p){
             res = d;
         }
     }
+    /*
     vec3 norm = vec3(0.57735);
-    float pl = dot(p, norm);
-    return max(res,pl);
+    float pl = dot( p, norm )-smoothstep(0.05, 1.0, sin(iTime*0.0954-2.5248)*0.5+0.5)*6.0;
+    //float pl = dot(p, norm);
+    return max(res,pl);*/
+    return res;
 }

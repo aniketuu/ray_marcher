@@ -26,7 +26,7 @@ int main(){
     char f_path[] = "shaders/frag.GLSL";
     Shader shader(v_path, f_path);
     shader.addGLSL("//  SETTINGS", "shaders/settings.GLSL");
-    shader.addGLSL("//  MAP", "shaders/apollonian.GLSL");
+    shader.addGLSL("//  MAP", "shaders/primi.GLSL");
     shader.addGLSL("//  SDF LIBRARY", "shaders/sdf_lib.GLSL");
     shader.compileShaders();
     shader.use();
@@ -34,7 +34,10 @@ int main(){
     // rigs
     bool barell_roll = false;
     float count = 0.0f;
-    
+
+    // record
+    bool record = false;
+    ofstream record_file("records.txt");    
 
     // main loop
     bool running = true;
@@ -57,6 +60,15 @@ int main(){
         Uint32 pt = SDL_GetTicks();
         float iTime = (float)pt/1000.0;
         shader.setFloat("iTime", iTime);
+
+        // record
+        if(record){
+            GLfloat* buffer = new GLfloat[display_width * display_height * 4];
+            glReadPixels(0, 0, display_width, display_height,  GL_RGBA, GL_FLOAT, buffer);
+            record_file << buffer;
+            record_file <<"\n";
+            record = false;
+        }
         
         // render
         fullscreen_quad.bindObjects();
@@ -139,7 +151,13 @@ int main(){
                         break;
                     case SDLK_LEFT:
                         camera.rotation_sensitivity *= 0.5;
-                        break; 
+                        break;
+                    case SDLK_i:
+                        record = true;
+                    break;
+                    case SDLK_o:
+                        record = false;
+                    break; 
                     default:
                         break;
                 }
@@ -155,10 +173,11 @@ int main(){
         }
         Uint32 timer_stop = SDL_GetTicks();
         Uint32 timer_difference = timer_stop-timer_start;
-        Uint32 limiter = 16;
+        Uint32 limiter = 32;
         if(timer_difference < limiter){
             SDL_Delay(limiter-timer_difference);
         }
     }
+    record_file.close();
     return 0;
 }
