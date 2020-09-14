@@ -26,7 +26,7 @@ int main(){
     char f_path[] = "shaders/frag.GLSL";
     Shader shader(v_path, f_path);
     shader.addGLSL("//  SETTINGS", "shaders/settings.GLSL");
-    shader.addGLSL("//  MAP", "shaders/primi.GLSL");
+    shader.addGLSL("//  MAP", "shaders/inf_cube_sph.GLSL");
     shader.addGLSL("//  SDF LIBRARY", "shaders/sdf_lib.GLSL");
     shader.compileShaders();
     shader.use();

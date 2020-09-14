@@ -16,7 +16,7 @@
 #define SHADOW_ENABLED                  0
 #define SHADOW_DARKNESS                 0.8
 #define SHADOW_HARDNESS                 8.0
-#define REFLECTION                      0
+#define REFLECTION                      1
 #define REFLECTION_MAX_DISTANCE         8.0
 #define REFLECTION_MAX_STEPS            64
 #define RENDER_SUN                      1
